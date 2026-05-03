@@ -1,0 +1,7 @@
+{
+  "trained_on": "2026-05-03",
+  "data_range": "FIRMS VIIRS India",
+  "grid_size": "0.1 degree",
+  "target": "next_day_fire",
+  "version": "v1"
+}

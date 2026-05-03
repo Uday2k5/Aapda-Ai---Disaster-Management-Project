@@ -1,0 +1,7 @@
+{
+  "model": "XGBoost",
+  "n_estimators": 300,
+  "max_depth": 6,
+  "learning_rate": 0.05,
+  "scale_pos_weight": 10
+}

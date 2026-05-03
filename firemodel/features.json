@@ -1,0 +1,10 @@
+{
+  "features": [
+    "lat_bin",
+    "lon_bin",
+    "frp",
+    "fire_last_1d",
+    "fire_last_3d",
+    "fire_last_7d"
+  ]
+}
