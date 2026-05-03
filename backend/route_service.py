@@ -9,6 +9,7 @@ from typing import Any
 
 from backend.earthquake_service import _seismic_prior, predict_earthquake
 from backend.flood_service import _clamp, _regional_flood_factor, flood_risk_for_location
+from backend.wildfire_service import _wildfire_prior, predict_wildfire
 
 
 def safest_path_for_location(disaster: str, latitude: float, longitude: float, depth: float = 10.0) -> dict[str, Any]:
@@ -25,6 +26,12 @@ def safest_path_for_location(disaster: str, latitude: float, longitude: float, d
         if center_score < 0.62:
             return _no_route(disaster, center)
         grid, radius_used = _expand_earthquake_grid(latitude, longitude, depth, center)
+    elif disaster == "wildfire":
+        center = predict_wildfire(latitude, longitude)
+        center_score = float(center["risk_score"])
+        if center_score < 0.58:
+            return _no_route(disaster, center)
+        grid, radius_used = _expand_wildfire_grid(latitude, longitude, center)
     else:
         raise ValueError("Unsupported disaster type")
 
@@ -126,6 +133,16 @@ def _expand_earthquake_grid(
     return grid, radius
 
 
+def _expand_wildfire_grid(
+    latitude: float, longitude: float, center: dict[str, Any]
+) -> tuple[dict[tuple[int, int], dict[str, Any]], int]:
+    for radius in (6, 9, 12):
+        grid = _build_wildfire_grid(latitude, longitude, center, radius)
+        if _has_safe_boundary(grid, radius):
+            return grid, radius
+    return grid, radius
+
+
 def _build_earthquake_grid(
     latitude: float, longitude: float, depth: float, center: dict[str, Any], radius: int
 ) -> dict[tuple[int, int], dict[str, Any]]:
@@ -142,6 +159,26 @@ def _build_earthquake_grid(
             prior, _ = _seismic_prior(lat, lon)
             risk = min(0.98, max(0.03, base_score + prior))
             level = "High" if risk >= 0.62 else "Moderate" if risk >= 0.38 else "Low"
+            grid[(gx, gy)] = {"lat": round(lat, 5), "lon": round(lon, 5), "risk_score": risk, "risk_level": level}
+    return grid
+
+
+def _build_wildfire_grid(
+    latitude: float, longitude: float, center: dict[str, Any], radius: int
+) -> dict[tuple[int, int], dict[str, Any]]:
+    step = 0.025
+    center_prior, _ = _wildfire_prior(latitude, longitude)
+    center_score = float(center["risk_score"])
+    base_score = max(0.03, center_score - center_prior)
+
+    grid: dict[tuple[int, int], dict[str, Any]] = {}
+    for gx in range(-radius, radius + 1):
+        for gy in range(-radius, radius + 1):
+            lat = latitude + gy * step
+            lon = longitude + gx * step
+            prior, _ = _wildfire_prior(lat, lon)
+            risk = min(0.98, max(0.03, base_score + prior))
+            level = "High" if risk >= 0.58 else "Moderate" if risk >= 0.34 else "Low"
             grid[(gx, gy)] = {"lat": round(lat, 5), "lon": round(lon, 5), "risk_score": risk, "risk_level": level}
     return grid
 

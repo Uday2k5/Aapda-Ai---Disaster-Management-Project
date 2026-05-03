@@ -3,10 +3,12 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.config import WILDFIRE_MODEL
 from backend.earthquake_service import predict_earthquake
 from backend.flood_service import flood_risk_for_location, get_model_status
 from backend.hotspots import get_hotspots
 from backend.route_service import safest_path_for_location
+from backend.wildfire_service import predict_wildfire
 from backend.schemas import EarthquakeRequest, LocationRequest, RouteRequest
 
 
@@ -30,6 +32,7 @@ def health() -> dict[str, object]:
     return {
         "status": "ok",
         "flood_model": get_model_status().__dict__,
+        "wildfire_model": {"path": str(WILDFIRE_MODEL), "exists": WILDFIRE_MODEL.exists()},
     }
 
 
@@ -41,6 +44,11 @@ def flood_location(payload: LocationRequest) -> dict[str, object]:
 @app.post("/api/earthquake/predict")
 def earthquake_prediction(payload: EarthquakeRequest) -> dict[str, object]:
     return predict_earthquake(payload.latitude, payload.longitude, payload.depth)
+
+
+@app.post("/api/wildfire/predict")
+def wildfire_prediction(payload: LocationRequest) -> dict[str, object]:
+    return predict_wildfire(payload.latitude, payload.longitude)
 
 
 @app.get("/api/hotspots")

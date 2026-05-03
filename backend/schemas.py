@@ -13,5 +13,5 @@ class EarthquakeRequest(LocationRequest):
 
 
 class RouteRequest(LocationRequest):
-    disaster: str = Field(..., pattern="^(flood|earthquake)$")
+    disaster: str = Field(..., pattern="^(flood|earthquake|wildfire)$")
     depth: float = Field(10.0, ge=0, le=700)

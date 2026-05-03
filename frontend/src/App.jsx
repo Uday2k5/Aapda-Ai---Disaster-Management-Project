@@ -7,6 +7,7 @@ import {
   BarChart3,
   Compass,
   Droplets,
+  Flame,
   Gauge,
   ListFilter,
   LocateFixed,
@@ -31,13 +32,14 @@ function App() {
   const [location, setLocation] = useState(defaultLocation)
   const [flood, setFlood] = useState(null)
   const [earthquake, setEarthquake] = useState(null)
-  const [routes, setRoutes] = useState({ flood: null, earthquake: null })
-  const [hotspots, setHotspots] = useState({ flood: [], earthquake: [] })
+  const [wildfire, setWildfire] = useState(null)
+  const [routes, setRoutes] = useState({ flood: null, earthquake: null, wildfire: null })
+  const [hotspots, setHotspots] = useState({ flood: [], earthquake: [], wildfire: [] })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('Ready')
   const [theme, setTheme] = useState('dark')
 
-  const activeResult = page === 'flood' ? flood : earthquake
+  const activeResult = page === 'flood' ? flood : page === 'earthquake' ? earthquake : wildfire
   useEffect(() => {
     loadHotspots()
   }, [])
@@ -51,6 +53,7 @@ function App() {
       setHotspots({
         flood: fallbackHotspots.flood,
         earthquake: fallbackHotspots.earthquake,
+        wildfire: fallbackHotspots.wildfire,
       })
     }
   }
@@ -83,7 +86,7 @@ function App() {
         setLocation(next)
         setLoading(false)
         setMessage('Live location captured')
-        if (nextPage === 'flood' || nextPage === 'earthquake') {
+        if (nextPage === 'flood' || nextPage === 'earthquake' || nextPage === 'wildfire') {
           openAnalysis(nextPage, next)
         }
       },
@@ -101,20 +104,23 @@ function App() {
   }
 
   async function analyze(kind = page, nextLocation = location) {
-    if (kind !== 'flood' && kind !== 'earthquake') return
+    if (kind !== 'flood' && kind !== 'earthquake' && kind !== 'wildfire') return
     setLoading(true)
     setMessage(`Running ${kind} analysis...`)
 
     try {
-      const endpoint = kind === 'flood' ? '/api/flood/location' : '/api/earthquake/predict'
+      const endpoint =
+        kind === 'flood' ? '/api/flood/location' : kind === 'earthquake' ? '/api/earthquake/predict' : '/api/wildfire/predict'
       const body =
         kind === 'flood'
           ? { latitude: Number(nextLocation.latitude), longitude: Number(nextLocation.longitude) }
-          : {
+          : kind === 'earthquake'
+            ? {
               latitude: Number(nextLocation.latitude),
               longitude: Number(nextLocation.longitude),
               depth: Number(nextLocation.depth),
             }
+            : { latitude: Number(nextLocation.latitude), longitude: Number(nextLocation.longitude) }
 
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -126,6 +132,7 @@ function App() {
       const data = await response.json()
       if (kind === 'flood') setFlood(data)
       if (kind === 'earthquake') setEarthquake(data)
+      if (kind === 'wildfire') setWildfire(data)
       if (data.risk_level === 'High') {
         await loadSafestRoute(kind, nextLocation)
       } else {
@@ -179,12 +186,14 @@ function App() {
           onUseLocation={() => useLiveLocation('home')}
           onOpenFlood={() => openAnalysis('flood')}
           onOpenEarthquake={() => openAnalysis('earthquake')}
+          onOpenWildfire={() => openAnalysis('wildfire')}
           onLiveFlood={() => useLiveLocation('flood')}
           onLiveEarthquake={() => useLiveLocation('earthquake')}
+          onLiveWildfire={() => useLiveLocation('wildfire')}
         />
       )}
 
-      {(page === 'flood' || page === 'earthquake') && (
+      {(page === 'flood' || page === 'earthquake' || page === 'wildfire') && (
         <AnalysisPage
           kind={page}
           location={location}
@@ -221,6 +230,9 @@ function Header({ page, onNavigate, message, hotspots, onSelectHotspot, theme, o
         <button className={page === 'earthquake' ? 'active' : ''} type="button" onClick={() => onNavigate('earthquake')}>
           Earthquake
         </button>
+        <button className={page === 'wildfire' ? 'active' : ''} type="button" onClick={() => onNavigate('wildfire')}>
+          Wildfire
+        </button>
         <button type="button" disabled>
           More soon
         </button>
@@ -251,6 +263,7 @@ function HotspotPanel({ hotspots, onSelect }) {
         </div>
         <HotspotGroup title="Flood" cities={hotspots.flood} onSelect={onSelect} />
         <HotspotGroup title="Earthquake" cities={hotspots.earthquake} onSelect={onSelect} />
+        <HotspotGroup title="Wildfire" cities={hotspots.wildfire} onSelect={onSelect} />
       </section>
     </div>
   )
@@ -283,8 +296,10 @@ function HomePage({
   onUseLocation,
   onOpenFlood,
   onOpenEarthquake,
+  onOpenWildfire,
   onLiveFlood,
   onLiveEarthquake,
+  onLiveWildfire,
 }) {
   return (
     <section className="home-layout">
@@ -292,7 +307,7 @@ function HomePage({
         <p className="eyebrow">India live hazard dashboard</p>
         <h1>Choose a disaster model and analyze your current region.</h1>
         <p className="hero-text">
-          Capture your live location or enter coordinates manually, then open flood or earthquake analysis with a map-based risk view.
+          Capture your live location or enter coordinates manually, then open flood, earthquake, or wildfire analysis with a map-based risk view.
         </p>
         <div className="hero-actions">
           <button type="button" onClick={onUseLocation} disabled={loading}>
@@ -307,6 +322,10 @@ function HomePage({
             <AlertTriangle size={18} />
             Earthquake Analysis
           </button>
+          <button className="secondary" type="button" onClick={onOpenWildfire} disabled={loading}>
+            <Flame size={18} />
+            Wildfire Analysis
+          </button>
         </div>
         <section className="signal-strip">
           <div>
@@ -314,8 +333,8 @@ function HomePage({
             <span>Browser location supported</span>
           </div>
           <div>
-            <strong>2 Models</strong>
-            <span>Flood and earthquake</span>
+            <strong>3 Models</strong>
+            <span>Flood, earthquake, wildfire</span>
           </div>
           <div>
             <strong>Map Risk</strong>
@@ -343,6 +362,14 @@ function HomePage({
           onLive={onLiveEarthquake}
           loading={loading}
         />
+        <ChoiceCard
+          icon={<Flame size={30} />}
+          title="Wildfire Risk"
+          description="Historical fire-grid model with regional priors for next-day hotspot risk and escape routing."
+          onOpen={onOpenWildfire}
+          onLive={onLiveWildfire}
+          loading={loading}
+        />
       </section>
     </section>
   )
@@ -350,8 +377,9 @@ function HomePage({
 
 function AnalysisPage({ kind, location, setLocation, result, route, loading, onBack, onAnalyze, onUseLocation }) {
   const title = titleFor(kind)
-  const icon = kind === 'flood' ? <Waves size={26} /> : <AlertTriangle size={26} />
-  const metric = kind === 'flood' ? `${result?.risk_percent ?? '--'}%` : result ? `M ${result.predicted_magnitude}` : '--'
+  const icon = kind === 'flood' ? <Waves size={26} /> : kind === 'earthquake' ? <AlertTriangle size={26} /> : <Flame size={26} />
+  const metric =
+    kind === 'flood' ? `${result?.risk_percent ?? '--'}%` : kind === 'earthquake' ? (result ? `M ${result.predicted_magnitude}` : '--') : `${result?.risk_percent ?? '--'}%`
   const level = result?.risk_level ?? 'Waiting'
 
   return (
@@ -503,6 +531,23 @@ function InfoPanel({ kind, result, route }) {
     )
   }
 
+  if (kind === 'wildfire') {
+    return (
+      <section className="info-panel">
+        <InfoHeader title="Wildfire Intelligence" subtitle={result.advice} />
+        <InfoRow label="Risk percent" value={`${result.risk_percent}%`} />
+        <InfoRow label="Grid cell" value={`${result.lat_bin}, ${result.lon_bin}`} />
+        <InfoRow label="Recent fire days" value={result.recent_fire_days} />
+        <InfoRow label="Mean FRP" value={result.mean_frp} />
+        <InfoRow label="Seasonal factor" value={result.seasonal_factor} />
+        <InfoRow label="Sensitive region" value={result.nearest_fire_region} />
+        <InfoRow label="Model status" value={String(result.model_status).startsWith('loaded') ? 'Loaded' : 'Fallback'} />
+        <InfoRow label="Safe path" value={route?.needed ? route.end_risk_level : 'Not needed'} />
+        <StepList route={route} />
+      </section>
+    )
+  }
+
   return (
     <section className="info-panel">
       <InfoHeader title="Earthquake Intelligence" subtitle={result.note} />
@@ -558,7 +603,7 @@ function Footer() {
   return (
     <footer className="site-footer">
       <span>Disaster IQ for Minor Project 2</span>
-      <span>Flood and earthquake predictions are academic decision-support outputs, not official alerts.</span>
+      <span>Flood, earthquake, and wildfire predictions are academic decision-support outputs, not official alerts.</span>
     </footer>
   )
 }
@@ -620,7 +665,9 @@ function RecenterMap({ center }) {
 }
 
 function titleFor(kind) {
-  return kind === 'flood' ? 'Flood Analysis' : 'Earthquake Analysis'
+  if (kind === 'flood') return 'Flood Analysis'
+  if (kind === 'earthquake') return 'Earthquake Analysis'
+  return 'Wildfire Analysis'
 }
 
 function riskClass(level) {
@@ -648,6 +695,11 @@ const fallbackHotspots = {
     { name: 'Srinagar', country: 'India', disaster: 'earthquake', latitude: 34.0837, longitude: 74.7973, depth: 15, risk_level: 'High', risk_score: 0.78, risk_percent: 78 },
     { name: 'Gangtok', country: 'India', disaster: 'earthquake', latitude: 27.3314, longitude: 88.6138, depth: 18, risk_level: 'High', risk_score: 0.75, risk_percent: 75 },
     { name: 'Kathmandu', country: 'Nepal', disaster: 'earthquake', latitude: 27.7172, longitude: 85.324, depth: 12, risk_level: 'High', risk_score: 0.82, risk_percent: 82 },
+  ],
+  wildfire: [
+    { name: 'Dehradun', country: 'India', disaster: 'wildfire', latitude: 30.3165, longitude: 78.0322, depth: 18, risk_level: 'Low', risk_score: 0.22, risk_percent: 22 },
+    { name: 'Shimla', country: 'India', disaster: 'wildfire', latitude: 31.1048, longitude: 77.1734, depth: 18, risk_level: 'Low', risk_score: 0.21, risk_percent: 21 },
+    { name: 'Srinagar', country: 'India', disaster: 'wildfire', latitude: 34.0837, longitude: 74.7973, depth: 18, risk_level: 'Low', risk_score: 0.17, risk_percent: 17 },
   ],
 }
 

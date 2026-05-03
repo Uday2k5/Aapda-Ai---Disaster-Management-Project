@@ -7,3 +7,5 @@ uvicorn[standard]
 pydantic
 pandas
 tensorflow
+xgboost
+joblib
