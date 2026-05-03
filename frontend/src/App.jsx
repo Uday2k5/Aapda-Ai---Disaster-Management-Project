@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Circle, CircleMarker, MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { Circle, CircleMarker, MapContainer, Polyline, TileLayer, useMap } from 'react-leaflet'
 import {
   Activity,
   AlertTriangle,
@@ -31,6 +31,7 @@ function App() {
   const [location, setLocation] = useState(defaultLocation)
   const [flood, setFlood] = useState(null)
   const [earthquake, setEarthquake] = useState(null)
+  const [routes, setRoutes] = useState({ flood: null, earthquake: null })
   const [hotspots, setHotspots] = useState({ flood: [], earthquake: [] })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('Ready')
@@ -125,11 +126,36 @@ function App() {
       const data = await response.json()
       if (kind === 'flood') setFlood(data)
       if (kind === 'earthquake') setEarthquake(data)
+      if (data.risk_level === 'High') {
+        await loadSafestRoute(kind, nextLocation)
+      } else {
+        setRoutes((current) => ({ ...current, [kind]: null }))
+      }
       setMessage(`${titleFor(kind)} analysis updated`)
     } catch (error) {
       setMessage(error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadSafestRoute(kind, nextLocation) {
+    try {
+      const response = await fetch(`${API_BASE}/api/route/safest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          disaster: kind,
+          latitude: Number(nextLocation.latitude),
+          longitude: Number(nextLocation.longitude),
+          depth: Number(nextLocation.depth),
+        }),
+      })
+      if (!response.ok) throw new Error('Route API request failed')
+      const data = await response.json()
+      setRoutes((current) => ({ ...current, [kind]: data }))
+    } catch {
+      setRoutes((current) => ({ ...current, [kind]: null }))
     }
   }
 
@@ -164,6 +190,7 @@ function App() {
           location={location}
           setLocation={setLocation}
           result={activeResult}
+          route={routes[page]}
           loading={loading}
           onBack={() => setPage('home')}
           onAnalyze={() => analyze(page)}
@@ -321,7 +348,7 @@ function HomePage({
   )
 }
 
-function AnalysisPage({ kind, location, setLocation, result, loading, onBack, onAnalyze, onUseLocation }) {
+function AnalysisPage({ kind, location, setLocation, result, route, loading, onBack, onAnalyze, onUseLocation }) {
   const title = titleFor(kind)
   const icon = kind === 'flood' ? <Waves size={26} /> : <AlertTriangle size={26} />
   const metric = kind === 'flood' ? `${result?.risk_percent ?? '--'}%` : result ? `M ${result.predicted_magnitude}` : '--'
@@ -360,19 +387,24 @@ function AnalysisPage({ kind, location, setLocation, result, loading, onBack, on
               Live location
             </button>
           </div>
+          {route?.needed && (
+            <p className="route-note">
+              Safest exit route available. End zone: {route.end_risk_level} ({Math.round(route.end_risk_score * 100)}%). Mode: {route.route_mode === 'road' ? 'roads' : 'risk fallback'}.
+            </p>
+          )}
         </section>
       </div>
 
       <section className="map-and-info">
         <div className="map-card">
-          <RiskMap location={location} level={level} />
+          <RiskMap location={location} level={level} route={route} />
           <div className="map-caption">
             <span>{Number(location.latitude).toFixed(4)}, {Number(location.longitude).toFixed(4)}</span>
             <strong>{level} risk zone</strong>
           </div>
         </div>
 
-        <InfoPanel kind={kind} result={result} />
+        <InfoPanel kind={kind} result={result} route={route} />
       </section>
     </section>
   )
@@ -439,7 +471,7 @@ function ChoiceCard({ icon, title, description, onOpen, onLive, loading }) {
   )
 }
 
-function InfoPanel({ kind, result }) {
+function InfoPanel({ kind, result, route }) {
   if (!result) {
     return (
       <section className="info-panel">
@@ -465,6 +497,8 @@ function InfoPanel({ kind, result }) {
         <InfoRow label="Sensitive region" value={result.nearest_sensitive_region} />
         <InfoRow label="Sentinel checkpoint" value={result.model_status.checkpoint_exists ? 'Available' : 'Missing'} />
         <InfoRow label="Flood model IoU" value={result.model_status.trained_best_iou?.toFixed(3) ?? '--'} />
+        <InfoRow label="Safe path" value={route?.needed ? route.end_risk_level : 'Not needed'} />
+        <StepList route={route} />
       </section>
     )
   }
@@ -478,7 +512,24 @@ function InfoPanel({ kind, result }) {
       <InfoRow label="Seismic zone" value={result.seismic_zone ?? 'General background'} />
       <InfoRow label="Model status" value={result.model_status === 'loaded' ? 'Loaded' : 'Fallback'} />
       <InfoRow label="Historical events" value={result.data_points} />
+      <InfoRow label="Safe path" value={route?.needed ? route.end_risk_level : 'Not needed'} />
+      <StepList route={route} />
     </section>
+  )
+}
+
+function StepList({ route }) {
+  if (!route?.needed || !route.steps?.length) return null
+  return (
+    <div className="step-list">
+      <h2>Turn guidance</h2>
+      {route.steps.map((step, index) => (
+        <div className="step-row" key={`${step.instruction}-${index}`}>
+          <span>{index + 1}. {step.instruction}</span>
+          <strong>{step.distance_m} m</strong>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -512,7 +563,7 @@ function Footer() {
   )
 }
 
-function RiskMap({ location, level }) {
+function RiskMap({ location, level, route }) {
   const latitude = Number(location.latitude)
   const longitude = Number(location.longitude)
   const center = useMemo(() => [latitude, longitude], [latitude, longitude])
@@ -546,6 +597,16 @@ function RiskMap({ location, level }) {
           weight: 3,
         }}
       />
+      {route?.needed && route.path?.length > 1 && (
+        <Polyline
+          positions={route.path}
+          pathOptions={{
+            color: '#4da3ff',
+            weight: 5,
+            opacity: 0.9,
+          }}
+        />
+      )}
     </MapContainer>
   )
 }

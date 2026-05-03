@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.earthquake_service import predict_earthquake
 from backend.flood_service import flood_risk_for_location, get_model_status
 from backend.hotspots import get_hotspots
-from backend.schemas import EarthquakeRequest, LocationRequest
+from backend.route_service import safest_path_for_location
+from backend.schemas import EarthquakeRequest, LocationRequest, RouteRequest
 
 
 app = FastAPI(
@@ -45,3 +46,13 @@ def earthquake_prediction(payload: EarthquakeRequest) -> dict[str, object]:
 @app.get("/api/hotspots")
 def hotspots() -> dict[str, list[dict[str, object]]]:
     return get_hotspots()
+
+
+@app.post("/api/route/safest")
+def safest_route(payload: RouteRequest) -> dict[str, object]:
+    return safest_path_for_location(
+        disaster=payload.disaster,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        depth=payload.depth,
+    )

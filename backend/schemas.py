@@ -10,3 +10,8 @@ class LocationRequest(BaseModel):
 
 class EarthquakeRequest(LocationRequest):
     depth: float = Field(10.0, ge=0, le=700)
+
+
+class RouteRequest(LocationRequest):
+    disaster: str = Field(..., pattern="^(flood|earthquake)$")
+    depth: float = Field(10.0, ge=0, le=700)
