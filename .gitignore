@@ -24,11 +24,11 @@ frontend/dist/
 .env.*
 
 # Model outputs and generated assets
-outputs/
-*.pt
-*.pth
-*.h5
-*.ckpt
+# outputs/
+# *.pt
+# *.pth
+# *.h5
+# *.ckpt
 
 # Large local datasets
 dataset/
