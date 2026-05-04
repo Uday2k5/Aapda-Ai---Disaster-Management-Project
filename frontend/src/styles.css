@@ -96,7 +96,7 @@ button:disabled {
   padding: 10px 12px;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 1200;
 }
 
 .light .site-header,
@@ -113,6 +113,7 @@ button:disabled {
 
 .light h1,
 .light h2,
+.light h3,
 .light .brand-button,
 .light .city-row,
 .light .info-row strong {
@@ -188,20 +189,13 @@ button:disabled {
   color: #2563eb;
 }
 
-.light .page-heading {
-  align-items: center;
-  justify-content: center;
-}
-
-.light .page-heading > div {
-  margin: 0 auto;
-  text-align: center;
-}
-
 .light .risk-score strong,
 .light .risk-title span,
 .light .map-caption span,
 .light .map-caption strong,
+.light .route-note,
+.light .step-row strong,
+.light .risk-title strong,
 .light .panel-heading svg,
 .light label {
   color: #09111f;
@@ -210,6 +204,11 @@ button:disabled {
 .light .map-caption {
   background: rgba(255, 255, 255, 0.94);
   border-color: rgba(15, 23, 42, 0.14);
+}
+
+.light .hotspot-group h3,
+.light .city-risk.waiting {
+  color: #09111f;
 }
 
 .hotspot-shell {
@@ -243,6 +242,7 @@ button:disabled {
   transform: translateY(-8px);
   transition: opacity 160ms ease, transform 160ms ease;
   width: 330px;
+  z-index: 1300;
 }
 
 .hotspot-shell:hover .hotspot-panel,
@@ -640,11 +640,16 @@ input:focus {
 }
 
 .page-heading {
-  align-items: end;
+  align-items: center;
   display: flex;
   gap: 18px;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 18px;
+}
+
+.page-heading > div {
+  margin: 0 auto;
+  text-align: center;
 }
 
 .page-heading h1 {
@@ -708,6 +713,7 @@ input:focus {
   min-height: clamp(460px, 58vh, 760px);
   overflow: hidden;
   position: relative;
+  z-index: 1;
 }
 
 .leaflet-map {
@@ -719,6 +725,7 @@ input:focus {
 .leaflet-container {
   background: #101820;
   font: inherit;
+  z-index: 1;
 }
 
 .leaflet-control-zoom a {

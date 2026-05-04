@@ -37,7 +37,7 @@ function App() {
   const [hotspots, setHotspots] = useState({ flood: [], earthquake: [], wildfire: [] })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('Ready')
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState('light')
 
   const activeResult = page === 'flood' ? flood : page === 'earthquake' ? earthquake : wildfire
   useEffect(() => {
