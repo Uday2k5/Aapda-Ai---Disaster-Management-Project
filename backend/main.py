@@ -13,7 +13,7 @@ from backend.schemas import EarthquakeRequest, LocationRequest, RouteRequest
 
 
 app = FastAPI(
-    title="Disaster Intelligence API",
+    title="Aapda Ai API",
     description="Flood and earthquake prediction API for the Minor Project dashboard.",
     version="1.0.0",
 )
