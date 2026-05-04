@@ -32,7 +32,12 @@ outputs/
 
 # Large local datasets
 dataset/
-Earthquake/
+Earthquake/*
+!Earthquake/**/*.h5
+!Earthquake/**/*.pkl
+!Earthquake/**/*.joblib
+!Earthquake/**/*.json
+
 
 # OS/editor files
 .DS_Store
