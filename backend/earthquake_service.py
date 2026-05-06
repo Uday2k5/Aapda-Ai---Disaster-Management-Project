@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from backend.config import EARTHQUAKE_DATA, EARTHQUAKE_MODEL
+from backend.config import EARTHQUAKE_DATA, EARTHQUAKE_MODEL, USE_EARTHQUAKE_MODEL
 
 
 FEATURES = [
@@ -61,12 +61,16 @@ def predict_earthquake(latitude: float, longitude: float, depth: float) -> dict[
     sequence.iloc[-1, sequence.columns.get_loc("depth")] = _scale(depth, 0.0, 700.0)
 
     x = sequence.to_numpy(dtype=np.float32)[None, :, :]
-    model_status = "loaded"
-    try:
-        model = _load_model()
-        predicted_scaled = float(model.predict(x, verbose=0)[0][0])
-    except Exception as exc:
-        model_status = f"fallback: {exc}"
+    model_status = "fallback: TensorFlow disabled for this deployment"
+    if USE_EARTHQUAKE_MODEL:
+        try:
+            model = _load_model()
+            predicted_scaled = float(model.predict(x, verbose=0)[0][0])
+            model_status = "loaded"
+        except Exception as exc:
+            model_status = f"fallback: {exc}"
+            predicted_scaled = float(sequence["mag"].tail(10).mean())
+    else:
         predicted_scaled = float(sequence["mag"].tail(10).mean())
 
     magnitude = _inverse_magnitude(predicted_scaled)
