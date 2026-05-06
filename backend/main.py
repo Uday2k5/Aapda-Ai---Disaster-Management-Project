@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.config import WILDFIRE_MODEL
+from backend.config import EARTHQUAKE_DATA, EARTHQUAKE_MODEL, WILDFIRE_MODEL
 from backend.earthquake_service import predict_earthquake
 from backend.flood_service import flood_risk_for_location, get_model_status
 from backend.hotspots import get_hotspots
@@ -37,6 +37,12 @@ def health() -> dict[str, object]:
     return {
         "status": "ok",
         "flood_model": get_model_status().__dict__,
+        "earthquake_model": {
+            "model_path": str(EARTHQUAKE_MODEL),
+            "model_exists": EARTHQUAKE_MODEL.exists(),
+            "data_path": str(EARTHQUAKE_DATA),
+            "data_exists": EARTHQUAKE_DATA.exists(),
+        },
         "wildfire_model": {"path": str(WILDFIRE_MODEL), "exists": WILDFIRE_MODEL.exists()},
     }
 

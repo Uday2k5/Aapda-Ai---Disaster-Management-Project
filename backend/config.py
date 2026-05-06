@@ -7,6 +7,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FLOOD_CHECKPOINT = PROJECT_ROOT / "outputs" / "checkpoints" / "best_unet.pt"
 FLOOD_DATA_ROOT = PROJECT_ROOT / "dataset" / "dataset" / "sen1floods11_india"
 EARTHQUAKE_DIR = PROJECT_ROOT / "earthquake"
+if not EARTHQUAKE_DIR.exists():
+    EARTHQUAKE_DIR = PROJECT_ROOT / "Earthquake"
 EARTHQUAKE_MODEL = EARTHQUAKE_DIR / "smarter_earthquake_model.h5"
 EARTHQUAKE_DATA = EARTHQUAKE_DIR / "cleaned_earthquake_data.csv"
 WILDFIRE_DIR = PROJECT_ROOT / "firemodel"
