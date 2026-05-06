@@ -77,7 +77,7 @@ export function HomePage({
     <section className="home-layout">
       <div className="hero-copy">
         <p className="eyebrow">India live hazard dashboard</p>
-        <h1>Choose a disaster model and analyze your current region.</h1>
+        <h1>Disaster analysis for your region.</h1>
         <p className="hero-text">
           Capture your live location or enter coordinates manually, then open flood, earthquake, or wildfire analysis with a map-based risk view.
         </p>
