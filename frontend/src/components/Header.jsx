@@ -1,4 +1,5 @@
-import { Activity, ListFilter, ShieldCheck, SunMoon } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Activity, ListFilter, MoonStar, ShieldCheck, Sun } from 'lucide-react'
 
 import { riskClass } from './shared'
 
@@ -25,8 +26,8 @@ function HotspotGroup({ title, cities, onSelect }) {
 function HotspotPanel({ hotspots, onSelect }) {
   return (
     <div className="hotspot-shell">
-      <button className="hotspot-tab" type="button" aria-label="Show risk cities">
-        <ListFilter size={20} />
+      <button className="nav-pill-button" type="button" aria-label="Show risk cities">
+        <ListFilter size={16} />
         <span>Risk Cities</span>
       </button>
       <section className="hotspot-panel">
@@ -43,37 +44,49 @@ function HotspotPanel({ hotspots, onSelect }) {
 }
 
 export function Header({ page, onNavigate, message, hotspots, onSelectHotspot, theme, onToggleTheme }) {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    function handleScroll() {
+      const trigger = page === 'home' ? window.innerHeight * 0.55 : 8
+      setScrolled(window.scrollY > trigger)
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [page])
+
   return (
-    <header className="site-header">
+    <header className={`site-header ${page === 'home' ? 'home-header' : 'inner-header'} ${scrolled ? 'scrolled' : ''}`}>
       <button className="brand-button" type="button" onClick={() => onNavigate('home')}>
         <ShieldCheck size={24} />
         <span>Aapda Ai</span>
       </button>
-      <HotspotPanel hotspots={hotspots} onSelect={onSelectHotspot} />
-      <nav>
-        <button className={page === 'home' ? 'active' : ''} type="button" onClick={() => onNavigate('home')}>
-          Overview
+      <div className="header-center">
+        <nav className="nav-pill">
+          <button className={page === 'home' ? 'active' : ''} type="button" onClick={() => onNavigate('home')}>
+            Overview
+          </button>
+          <button className={page === 'flood' ? 'active' : ''} type="button" onClick={() => onNavigate('flood')}>
+            Flood
+          </button>
+          <button className={page === 'earthquake' ? 'active' : ''} type="button" onClick={() => onNavigate('earthquake')}>
+            Earthquake
+          </button>
+          <button className={page === 'wildfire' ? 'active' : ''} type="button" onClick={() => onNavigate('wildfire')}>
+            Wildfire
+          </button>
+          <HotspotPanel hotspots={hotspots} onSelect={onSelectHotspot} />
+        </nav>
+      </div>
+      <div className="header-actions">
+        <div className="status-orb" title={message} aria-label={message}>
+          <Activity size={16} />
+        </div>
+        <button className="theme-orb" type="button" onClick={onToggleTheme} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+          {theme === 'dark' ? <Sun size={17} /> : <MoonStar size={17} />}
         </button>
-        <button className={page === 'flood' ? 'active' : ''} type="button" onClick={() => onNavigate('flood')}>
-          Flood
-        </button>
-        <button className={page === 'earthquake' ? 'active' : ''} type="button" onClick={() => onNavigate('earthquake')}>
-          Earthquake
-        </button>
-        <button className={page === 'wildfire' ? 'active' : ''} type="button" onClick={() => onNavigate('wildfire')}>
-          Wildfire
-        </button>
-        <button type="button" disabled>
-          More soon
-        </button>
-      </nav>
-      <button className="theme-toggle" type="button" onClick={onToggleTheme}>
-        <SunMoon size={17} />
-        {theme === 'dark' ? 'Light' : 'Dark'}
-      </button>
-      <div className="system-status">
-        <Activity size={16} />
-        <span>{message}</span>
       </div>
     </header>
   )
