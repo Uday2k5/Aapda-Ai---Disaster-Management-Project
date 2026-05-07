@@ -14,6 +14,12 @@ const defaultLocation = {
   depth: 18,
 }
 
+const earthquakeDefaultLocation = {
+  latitude: 27.7172,
+  longitude: 85.324,
+  depth: 18,
+}
+
 function App() {
   const [page, setPage] = useState('home')
   const [location, setLocation] = useState(defaultLocation)
@@ -86,6 +92,15 @@ function App() {
   }
 
   async function openAnalysis(kind, nextLocation = location) {
+    if (
+      kind === 'earthquake' &&
+      nextLocation.latitude === defaultLocation.latitude &&
+      nextLocation.longitude === defaultLocation.longitude &&
+      nextLocation.depth === defaultLocation.depth
+    ) {
+      nextLocation = earthquakeDefaultLocation
+      setLocation(nextLocation)
+    }
     setPage(kind)
     await analyze(kind, nextLocation)
   }

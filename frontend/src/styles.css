@@ -983,6 +983,8 @@ input:focus {
 
 .info-row strong {
   color: #ffffff;
+  line-height: 1.4;
+  max-width: 58%;
   text-align: right;
 }
 

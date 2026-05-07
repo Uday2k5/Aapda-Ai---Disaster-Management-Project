@@ -97,8 +97,9 @@ function InfoPanel({ kind, result, route }) {
       <InfoRow label="Risk percent" value={`${result.risk_percent}%`} />
       <InfoRow label="Depth" value={`${result.depth_km} km`} />
       <InfoRow label="Seismic zone" value={result.seismic_zone ?? 'General background'} />
+      <InfoRow label="Sequence source" value={result.data_source ?? 'Local historical earthquake dataset'} />
       <InfoRow label="Model status" value={result.model_status === 'loaded' ? 'Loaded' : 'Fallback'} />
-      <InfoRow label="Historical events" value={result.data_points} />
+      <InfoRow label="Sequence events" value={result.data_points} />
       <InfoRow label="Safe path" value={route?.needed ? route.end_risk_level : 'Not needed'} />
       <StepList route={route} />
     </section>
